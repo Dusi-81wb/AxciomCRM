@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{{ activity.subject }} — Activity Details — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header & Action Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{{ url_for('activities.activity_list') }}">Activities</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ activity.subject }}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                    {{ activity.subject }}
+                    {% if activity.status == 'Completed' %}
+                        <span class="badge bg-success fs-6">Completed</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark fs-6">Planned</span>
+                    {% endif %}
+                </h1>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <a href="{{ url_for('activities.activity_list') }}" class="btn btn-outline-secondary">
+                    &larr; Back to List
+                </a>
+                <a href="{{ url_for('activities.activity_edit', activity_id=activity.activity_id) }}" class="btn btn-outline-primary">
+                    Edit Activity
+                </a>
+            </div>
+        </div>
+
+        <!-- Detail Cards -->
+        <div class="row g-4">
+            <!-- Left Column: Activity Info -->
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-semibold text-dark">Activity Log Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Subject</div>
+                            <div class="col-sm-8 fw-semibold text-dark">{{ activity.subject }}</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Activity Type</div>
+                            <div class="col-sm-8">
+                                {% if activity.activity_type == 'Call' %}
+                                    <span class="badge bg-primary fs-6">Call</span>
+                                {% elif activity.activity_type == 'Meeting' %}
+                                    <span class="badge bg-info text-dark fs-6">Meeting</span>
+                                {% elif activity.activity_type == 'Email' %}
+                                    <span class="badge bg-secondary fs-6">Email</span>
+                                {% elif activity.activity_type == 'Task' %}
+                                    <span class="badge bg-success fs-6">Task</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Activity Date & Time</div>
+                            <div class="col-sm-8">
+                                <span class="fw-semibold">{{ activity.activity_date.strftime('%Y-%m-%d %H:%M') if activity.activity_date else 'N/A' }}</span>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Status</div>
+                            <div class="col-sm-8">
+                                {% if activity.status == 'Completed' %}
+                                    <span class="badge bg-success">{{ activity.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">{{ activity.status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Assigned Representative</div>
+                            <div class="col-sm-8">
+                                <span class="fw-medium text-dark">{{ activity.assigned_username or 'Unassigned' }}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 text-muted small fw-medium">Description / Notes</div>
+                            <div class="col-sm-8 text-secondary">
+                                {% if activity.description %}
+                                    <p class="mb-0 text-break" style="white-space: pre-wrap;">{{ activity.description }}</p>
+                                {% else %}
+                                    <span class="text-muted fst-italic">No description recorded.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timestamps -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-3">
+                        <div class="text-muted small">
+                            Recorded Date: {{ activity.created_date.strftime('%Y-%m-%d %H:%M') if activity.created_date else 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Associated Records -->
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-semibold text-dark">Linked CRM Entity</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if activity.customer_id %}
+                            <div class="mb-3 p-3 bg-light rounded border">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1">Customer Account</div>
+                                <div class="fw-bold text-dark fs-6">{{ activity.customer_name or 'Customer #' ~ activity.customer_id }}</div>
+                                {% if activity.customer_code %}
+                                    <div class="small text-muted mb-2">Code: {{ activity.customer_code }}</div>
+                                {% endif %}
+                                <a href="{{ url_for('customers.customer_detail', customer_id=activity.customer_id) }}" class="btn btn-sm btn-outline-primary mt-1">
+                                    View Customer &rarr;
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        {% if activity.lead_id %}
+                            <div class="p-3 bg-light rounded border">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1">Lead Prospect</div>
+                                <div class="fw-bold text-dark fs-6">{{ activity.lead_name or 'Lead #' ~ activity.lead_id }}</div>
+                                {% if activity.lead_code %}
+                                    <div class="small text-muted mb-2">Code: {{ activity.lead_code }}</div>
+                                {% endif %}
+                                <a href="{{ url_for('leads.lead_detail', lead_id=activity.lead_id) }}" class="btn btn-sm btn-outline-primary mt-1">
+                                    View Lead &rarr;
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        {% if not activity.customer_id and not activity.lead_id %}
+                            <div class="text-muted fst-italic small">No linked entity.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

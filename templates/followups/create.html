@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule Follow-Up — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 fw-bold text-dark mb-1">Schedule Follow-Up</h1>
+                <p class="text-muted small mb-0">Record a planned touchpoint with a client, lead, or open deal.</p>
+            </div>
+            <div>
+                <a href="{{ url_for('followups.followup_list') }}" class="btn btn-outline-secondary">
+                    &larr; Cancel
+                </a>
+            </div>
+        </div>
+
+        {% if errors %}
+            <div class="alert alert-danger shadow-sm mb-4">
+                {% if errors.general %}
+                    <div>{{ errors.general }}</div>
+                {% endif %}
+                {% for field, err in errors.items() %}
+                    {% if field != 'general' and field not in ['subject', 'followup_date', 'followup_type', 'assigned_to', 'customer_id', 'lead_id', 'opportunity_id', 'remarks'] %}
+                        <div><strong>{{ field|capitalize }}:</strong> {{ err }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('followups.followup_create') }}" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Subject -->
+                    <div class="mb-3">
+                        <label for="subject" class="form-label fw-semibold">Subject / Purpose <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control {% if errors.subject %}is-invalid{% endif %}"
+                               id="subject" name="subject"
+                               placeholder="e.g. Follow-up on pricing proposal"
+                               value="{{ form_data.subject or '' }}" required maxlength="200">
+                        {% if errors.subject %}
+                            <div class="invalid-feedback">{{ errors.subject }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Follow-Up Date & Type Grid -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="followup_date" class="form-label fw-semibold">Follow-Up Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control {% if errors.followup_date %}is-invalid{% endif %}"
+                                   id="followup_date" name="followup_date"
+                                   value="{{ form_data.followup_date or '' }}" required>
+                            <div class="form-text small text-muted">Cannot be in the past (Asia/Kolkata).</div>
+                            {% if errors.followup_date %}
+                                <div class="invalid-feedback">{{ errors.followup_date }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="followup_type" class="form-label fw-semibold">Follow-Up Type <span class="text-danger">*</span></label>
+                            <select class="form-select {% if errors.followup_type %}is-invalid{% endif %}"
+                                    id="followup_type" name="followup_type" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Call" {% if form_data.followup_type == 'Call' %}selected{% endif %}>Call</option>
+                                <option value="Meeting" {% if form_data.followup_type == 'Meeting' %}selected{% endif %}>Meeting</option>
+                                <option value="Email" {% if form_data.followup_type == 'Email' %}selected{% endif %}>Email</option>
+                            </select>
+                            {% if errors.followup_type %}
+                                <div class="invalid-feedback">{{ errors.followup_type }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Linked Entities Section -->
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <div class="fw-semibold text-dark mb-1">CRM Entity Association <span class="text-danger">*</span></div>
+                        <p class="small text-muted mb-3">
+                            Connect this follow-up to at least one entity (Customer, Lead, or Opportunity).
+                        </p>
+
+                        <!-- Customer Selection -->
+                        <div class="mb-3">
+                            <label for="customer_id" class="form-label fw-semibold small">Linked Customer Account</label>
+                            <select class="form-select {% if errors.customer_id %}is-invalid{% endif %}"
+                                    id="customer_id" name="customer_id">
+                                <option value="">-- None / Select Customer --</option>
+                                {% for c in active_customers %}
+                                    <option value="{{ c.customer_id }}"
+                                        {% if form_data.customer_id and form_data.customer_id|string == c.customer_id|string %}selected{% endif %}>
+                                        {{ c.customer_name }} ({{ c.customer_code }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if errors.customer_id %}
+                                <div class="invalid-feedback">{{ errors.customer_id }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Lead Selection -->
+                        <div class="mb-3">
+                            <label for="lead_id" class="form-label fw-semibold small">Linked Lead Prospect</label>
+                            <select class="form-select {% if errors.lead_id %}is-invalid{% endif %}"
+                                    id="lead_id" name="lead_id">
+                                <option value="">-- None / Select Lead --</option>
+                                {% for l in leads %}
+                                    <option value="{{ l.lead_id }}"
+                                        {% if form_data.lead_id and form_data.lead_id|string == l.lead_id|string %}selected{% endif %}>
+                                        {{ l.lead_name }} ({{ l.lead_code }}) — {{ l.company_name or 'N/A' }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if errors.lead_id %}
+                                <div class="invalid-feedback">{{ errors.lead_id }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Opportunity Selection -->
+                        <div class="mb-0">
+                            <label for="opportunity_id" class="form-label fw-semibold small">Linked Deal / Opportunity</label>
+                            <select class="form-select {% if errors.opportunity_id %}is-invalid{% endif %}"
+                                    id="opportunity_id" name="opportunity_id">
+                                <option value="">-- None / Select Opportunity --</option>
+                                {% for o in opportunities %}
+                                    <option value="{{ o.opportunity_id }}"
+                                        {% if form_data.opportunity_id and form_data.opportunity_id|string == o.opportunity_id|string %}selected{% endif %}>
+                                        {{ o.opportunity_name }} ({{ o.stage }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if errors.opportunity_id %}
+                                <div class="invalid-feedback">{{ errors.opportunity_id }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Assignment Selection (Admin / Manager) -->
+                    {% if active_sales_reps %}
+                        <div class="mb-3">
+                            <label for="assigned_to" class="form-label fw-semibold">Assign To Sales Representative <span class="text-danger">*</span></label>
+                            <select class="form-select {% if errors.assigned_to %}is-invalid{% endif %}"
+                                    id="assigned_to" name="assigned_to" required>
+                                <option value="">-- Select Active Sales Representative --</option>
+                                {% for rep in active_sales_reps %}
+                                    <option value="{{ rep.user_id }}"
+                                        {% if form_data.assigned_to and form_data.assigned_to|string == rep.user_id|string %}selected{% endif %}>
+                                        {{ rep.username }} ({{ rep.email }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if errors.assigned_to %}
+                                <div class="invalid-feedback">{{ errors.assigned_to }}</div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="mb-3 p-3 bg-light rounded text-muted small">
+                            <strong>Assignment:</strong> This follow-up will be automatically assigned to you.
+                        </div>
+                    {% endif %}
+
+                    <!-- Remarks / Notes -->
+                    <div class="mb-4">
+                        <label for="remarks" class="form-label fw-semibold">Remarks / Agenda Notes</label>
+                        <textarea class="form-control {% if errors.remarks %}is-invalid{% endif %}"
+                                  id="remarks" name="remarks" rows="3"
+                                  placeholder="Agenda topics, preparation notes, or context for this touchpoint...">{{ form_data.remarks or '' }}</textarea>
+                        {% if errors.remarks %}
+                            <div class="invalid-feedback">{{ errors.remarks }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('followups.followup_list') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary fw-semibold px-4">
+                            Schedule Follow-Up
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

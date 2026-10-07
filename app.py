@@ -66,6 +66,14 @@ def create_app(config_name=None, config_object=None):
     from routes.opportunity_routes import opportunities_bp
     app.register_blueprint(opportunities_bp)
 
+    # Register follow-up management blueprint (Phase 8)
+    from routes.followup_routes import followups_bp
+    app.register_blueprint(followups_bp)
+
+    # Register activity management blueprint (Phase 8)
+    from routes.activity_routes import activities_bp
+    app.register_blueprint(activities_bp)
+
 
     # Phase 4 Centralized HTTP Error Handlers
     @app.errorhandler(400)

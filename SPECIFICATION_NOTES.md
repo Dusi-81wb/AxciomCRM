@@ -1224,4 +1224,33 @@ The blueprint and these specification notes must remain the project's implementa
      * Must explicitly select an active Sales Executive (role_id = 3, is_active = True).
      * Missing or empty assigned_to value is strictly rejected with 400 Bad Request ("An active Sales Executive must be explicitly selected.").
      * Silent defaulting or fallback to the Customer's assigned Sales Executive is prohibited.
+
+97. Phase 8 Follow-Up and Activity Management Decisions (Approved)
+1. Follow-Up Relationships:
+   - At least one relationship is required: customer_id, lead_id, or opportunity_id.
+   - If an Opportunity is selected, its parent Customer can be co-linked.
+   - Completely unlinked Follow-Ups are rejected with 400 Bad Request.
+   - Referenced entity must exist, belong to the user's scope, and not be Inactive (Customer) or terminal Converted/Unqualified/Lost (Lead).
+2. Follow-Up Types:
+   - Allowed Follow-Up Types: Call, Meeting, Email.
+3. Follow-Up Status Lifecycle & Overdue Semantics:
+   - Allowed statuses: Planned, Completed, Missed, Cancelled. Initial status: Planned.
+   - Overdue is a computed view/query filter (status = 'Planned' AND followup_date < CURRENT_DATE in Asia/Kolkata).
+   - The database does NOT automatically mutate stored status to Missed on read.
+   - Transitioning to Completed, Missed, or Cancelled requires explicit user action.
+   - Completed and Cancelled statuses are terminal (cannot be edited or transitioned).
+4. Follow-Up Rescheduling:
+   - Rescheduling updates followup_date (new date must be >= today in Asia/Kolkata).
+   - If status was Missed, rescheduling resets status to Planned.
+   - Rescheduling creates an audit entry recording old and new dates within the same database transaction.
+5. Activity Relationships & Schema:
+   - Strictly preserves Phase 1 schema without alteration: activities table links to customer_id or lead_id (at least one required).
+   - No opportunity_id is added to activities table.
+   - Allowed Activity Types: Call, Meeting, Email, Task (matching schema CHECK constraint).
+   - Allowed Activity Statuses: Completed, Planned (default Completed).
+6. Assignment & Ownership Rules:
+   - Sales Executive creation: Automatically self-assigned (assigned_to = current_user['user_id']). Any submitted assigned_to is ignored.
+   - Admin/Manager creation: Must explicitly select an active Sales Executive (role_id = 3, is_active = True). No fallback.
+   - Visibility: Enforced in SQL (WHERE assigned_to = %s / ANY(%s)). Sales Executives see only their own records. Admin sees all; Manager sees approved scope.
+   - Inactive Customers (status = 'Inactive') cannot receive new Follow-Ups or Activities.
 ```

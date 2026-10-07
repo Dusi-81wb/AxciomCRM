@@ -366,3 +366,157 @@ def validate_expected_close_date(close_date_val, status=OPPORTUNITY_STATUS_OPEN)
     return True, None
 
 
+# =============================================================================
+# 6. FOLLOW-UP AND ACTIVITY BUSINESS RULES (PHASE 8)
+# =============================================================================
+
+# Follow-Up Statuses
+FOLLOWUP_STATUS_PLANNED = "Planned"
+FOLLOWUP_STATUS_COMPLETED = "Completed"
+FOLLOWUP_STATUS_MISSED = "Missed"
+FOLLOWUP_STATUS_CANCELLED = "Cancelled"
+VALID_FOLLOWUP_STATUSES = {
+    FOLLOWUP_STATUS_PLANNED,
+    FOLLOWUP_STATUS_COMPLETED,
+    FOLLOWUP_STATUS_MISSED,
+    FOLLOWUP_STATUS_CANCELLED,
+}
+
+# Follow-Up Types
+FOLLOWUP_TYPE_CALL = "Call"
+FOLLOWUP_TYPE_MEETING = "Meeting"
+FOLLOWUP_TYPE_EMAIL = "Email"
+VALID_FOLLOWUP_TYPES = {
+    FOLLOWUP_TYPE_CALL,
+    FOLLOWUP_TYPE_MEETING,
+    FOLLOWUP_TYPE_EMAIL,
+}
+
+# Follow-Up Status Transitions (Decision 97 #3)
+FOLLOWUP_STATUS_TRANSITIONS = {
+    FOLLOWUP_STATUS_PLANNED: {FOLLOWUP_STATUS_COMPLETED, FOLLOWUP_STATUS_MISSED, FOLLOWUP_STATUS_CANCELLED},
+    FOLLOWUP_STATUS_MISSED: {FOLLOWUP_STATUS_COMPLETED, FOLLOWUP_STATUS_CANCELLED, FOLLOWUP_STATUS_PLANNED},
+    FOLLOWUP_STATUS_COMPLETED: set(),  # Terminal
+    FOLLOWUP_STATUS_CANCELLED: set(),  # Terminal
+}
+
+# Activity Types (Schema Constraint: Call, Meeting, Email, Task)
+ACTIVITY_TYPE_CALL = "Call"
+ACTIVITY_TYPE_MEETING = "Meeting"
+ACTIVITY_TYPE_EMAIL = "Email"
+ACTIVITY_TYPE_TASK = "Task"
+VALID_ACTIVITY_TYPES = {
+    ACTIVITY_TYPE_CALL,
+    ACTIVITY_TYPE_MEETING,
+    ACTIVITY_TYPE_EMAIL,
+    ACTIVITY_TYPE_TASK,
+}
+
+# Activity Statuses
+ACTIVITY_STATUS_COMPLETED = "Completed"
+ACTIVITY_STATUS_PLANNED = "Planned"
+VALID_ACTIVITY_STATUSES = {
+    ACTIVITY_STATUS_COMPLETED,
+    ACTIVITY_STATUS_PLANNED,
+}
+
+
+def validate_followup_status(status):
+    """Validate Follow-Up status is one of Planned, Completed, Missed, Cancelled."""
+    if not status or str(status).strip() not in VALID_FOLLOWUP_STATUSES:
+        return False, f"Status must be one of: {', '.join(sorted(VALID_FOLLOWUP_STATUSES))}."
+    return True, None
+
+
+def validate_followup_type(ftype):
+    """Validate Follow-Up type is one of Call, Meeting, Email."""
+    if not ftype or str(ftype).strip() not in VALID_FOLLOWUP_TYPES:
+        return False, f"Follow-up type must be one of: {', '.join(sorted(VALID_FOLLOWUP_TYPES))}."
+    return True, None
+
+
+def validate_followup_date(date_val):
+    """
+    Validate that FollowUpDate is not in the past relative to Asia/Kolkata business date.
+    Per Part 4 & Decision 97: A new Follow-Up date cannot be before today.
+    """
+    if date_val in (None, ""):
+        return False, "Follow-up date is required."
+
+    from datetime import datetime, date
+    from zoneinfo import ZoneInfo
+
+    if isinstance(date_val, date) and not isinstance(date_val, datetime):
+        parsed_date = date_val
+    elif isinstance(date_val, datetime):
+        parsed_date = date_val.date()
+    else:
+        try:
+            parsed_date = datetime.strptime(str(date_val).strip(), "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return False, "Follow-up date must be in YYYY-MM-DD format."
+
+    today_kolkata = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    if parsed_date < today_kolkata:
+        return False, "Follow-up date cannot be in the past."
+
+    return True, None
+
+
+def validate_followup_status_transition(current_status, target_status):
+    """
+    Validate Follow-Up status transitions.
+    Planned -> Completed, Missed, Cancelled
+    Missed -> Completed, Cancelled, Planned (Rescheduled)
+    Completed and Cancelled are terminal.
+    """
+    if current_status == target_status:
+        return True, None
+
+    allowed = FOLLOWUP_STATUS_TRANSITIONS.get(current_status, set())
+    if target_status not in allowed:
+        return False, f"Invalid status transition from '{current_status}' to '{target_status}'."
+
+    return True, None
+
+
+def validate_activity_type(atype):
+    """Validate Activity type against schema constraint ('Call', 'Meeting', 'Email', 'Task')."""
+    if not atype or str(atype).strip() not in VALID_ACTIVITY_TYPES:
+        return False, f"Activity type must be one of: {', '.join(sorted(VALID_ACTIVITY_TYPES))}."
+    return True, None
+
+
+def validate_activity_status(status):
+    """Validate Activity status."""
+    if not status or str(status).strip() not in VALID_ACTIVITY_STATUSES:
+        return False, f"Activity status must be one of: {', '.join(sorted(VALID_ACTIVITY_STATUSES))}."
+    return True, None
+
+
+def validate_activity_date(date_val):
+    """
+    Validate ActivityDate is a valid date or timestamp.
+    Accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, or YYYY-MM-DDTHH:MM format.
+    """
+    if date_val in (None, ""):
+        return False, "Activity date is required."
+
+    from datetime import datetime, date
+    if isinstance(date_val, (date, datetime)):
+        return True, None
+
+    date_str = str(date_val).strip()
+    # Try ISO/standard formats
+    formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"]
+    for fmt in formats:
+        try:
+            datetime.strptime(date_str, fmt)
+            return True, None
+        except ValueError:
+            continue
+
+    return False, "Activity date must be a valid date or timestamp (e.g. YYYY-MM-DD HH:MM)."
+
+
+

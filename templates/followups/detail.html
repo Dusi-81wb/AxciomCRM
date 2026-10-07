@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}{{ followup.subject }} — Follow-Up Details — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header & Action Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{{ url_for('followups.followup_list') }}">Follow-Ups</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ followup.subject }}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                    {{ followup.subject }}
+                    {% if followup.status == 'Planned' %}
+                        {% if followup.is_overdue %}
+                            <span class="badge bg-danger fs-6">Overdue</span>
+                        {% else %}
+                            <span class="badge bg-primary fs-6">Planned</span>
+                        {% endif %}
+                    {% elif followup.status == 'Completed' %}
+                        <span class="badge bg-success fs-6">Completed</span>
+                    {% elif followup.status == 'Missed' %}
+                        <span class="badge bg-danger fs-6">Missed</span>
+                    {% elif followup.status == 'Cancelled' %}
+                        <span class="badge bg-secondary fs-6">Cancelled</span>
+                    {% endif %}
+                </h1>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <a href="{{ url_for('followups.followup_list') }}" class="btn btn-outline-secondary">
+                    &larr; Back to List
+                </a>
+
+                {% if followup.status not in ('Completed', 'Cancelled') %}
+                    <a href="{{ url_for('followups.followup_edit', followup_id=followup.followup_id) }}" class="btn btn-outline-primary">
+                        Edit
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Follow-Up Action Toolbar (For Active / Reschedulable follow-ups) -->
+        {% if followup.status == 'Planned' %}
+            <div class="card shadow-sm border-0 mb-4 bg-light">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small fw-semibold text-secondary">Quick Actions:</span>
+                        <span class="badge bg-info text-dark">{{ followup.followup_type }}</span>
+                        <span class="text-muted small">&bull; Scheduled for {{ followup.followup_date }}</span>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <form action="{{ url_for('followups.followup_status_change', followup_id=followup.followup_id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="status" value="Completed">
+                            <button type="submit" class="btn btn-sm btn-success fw-semibold">
+                                &#10003; Mark Completed
+                            </button>
+                        </form>
+                        <form action="{{ url_for('followups.followup_status_change', followup_id=followup.followup_id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="status" value="Missed">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                Mark Missed
+                            </button>
+                        </form>
+                        <form action="{{ url_for('followups.followup_status_change', followup_id=followup.followup_id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="status" value="Cancelled">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" onclick="return confirm('Cancel this follow-up?');">
+                                Cancel
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#rescheduleModal">
+                            Reschedule &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% elif followup.status == 'Missed' %}
+            <div class="card shadow-sm border-0 mb-4 bg-light">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-danger">Missed</span>
+                        <span class="text-muted small">This follow-up was missed. You may reschedule or cancel it.</span>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#rescheduleModal">
+                            Reschedule Follow-Up &rarr;
+                        </button>
+                        <form action="{{ url_for('followups.followup_status_change', followup_id=followup.followup_id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="status" value="Cancelled">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" onclick="return confirm('Cancel this follow-up?');">
+                                Cancel
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% elif followup.status in ('Completed', 'Cancelled') %}
+            <div class="alert alert-secondary py-2 px-3 small mb-4">
+                This follow-up is in terminal status (<strong>{{ followup.status }}</strong>) and cannot be modified or transitioned further.
+            </div>
+        {% endif %}
+
+        <!-- Detail Cards -->
+        <div class="row g-4">
+            <!-- Left Column: Follow-Up Overview -->
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-semibold text-dark">Schedule & Type</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Subject</div>
+                            <div class="col-sm-8 fw-semibold text-dark">{{ followup.subject }}</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Type</div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-info text-dark fs-6">{{ followup.followup_type }}</span>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Scheduled Date</div>
+                            <div class="col-sm-8">
+                                <span class="fw-semibold">{{ followup.followup_date }}</span>
+                                {% if followup.is_overdue %}
+                                    <span class="badge bg-danger ms-2">Past Due</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Status</div>
+                            <div class="col-sm-8">
+                                {% if followup.status == 'Planned' %}
+                                    <span class="badge bg-primary">{{ followup.status }}</span>
+                                {% elif followup.status == 'Completed' %}
+                                    <span class="badge bg-success">{{ followup.status }}</span>
+                                {% elif followup.status == 'Missed' %}
+                                    <span class="badge bg-danger">{{ followup.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ followup.status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 text-muted small fw-medium">Assigned Representative</div>
+                            <div class="col-sm-8">
+                                <span class="fw-medium text-dark">{{ followup.assigned_username or 'Unassigned' }}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 text-muted small fw-medium">Remarks / Notes</div>
+                            <div class="col-sm-8 text-secondary">
+                                {% if followup.remarks %}
+                                    <p class="mb-0 text-break" style="white-space: pre-wrap;">{{ followup.remarks }}</p>
+                                {% else %}
+                                    <span class="text-muted fst-italic">No remarks recorded.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timestamps -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Created: {{ followup.created_date.strftime('%Y-%m-%d %H:%M') if followup.created_date else 'N/A' }}</span>
+                            <span>Modified: {{ followup.modified_date.strftime('%Y-%m-%d %H:%M') if followup.modified_date else 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Associated Records -->
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-semibold text-dark">Linked CRM Entity</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if followup.customer_id %}
+                            <div class="mb-3 p-3 bg-light rounded border">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1">Customer Account</div>
+                                <div class="fw-bold text-dark fs-6">{{ followup.customer_name or 'Customer #' ~ followup.customer_id }}</div>
+                                {% if followup.customer_code %}
+                                    <div class="small text-muted mb-2">Code: {{ followup.customer_code }}</div>
+                                {% endif %}
+                                <a href="{{ url_for('customers.customer_detail', customer_id=followup.customer_id) }}" class="btn btn-sm btn-outline-primary mt-1">
+                                    View Customer &rarr;
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        {% if followup.lead_id %}
+                            <div class="mb-3 p-3 bg-light rounded border">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1">Lead Prospect</div>
+                                <div class="fw-bold text-dark fs-6">{{ followup.lead_name or 'Lead #' ~ followup.lead_id }}</div>
+                                {% if followup.lead_code %}
+                                    <div class="small text-muted mb-2">Code: {{ followup.lead_code }}</div>
+                                {% endif %}
+                                <a href="{{ url_for('leads.lead_detail', lead_id=followup.lead_id) }}" class="btn btn-sm btn-outline-primary mt-1">
+                                    View Lead &rarr;
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        {% if followup.opportunity_id %}
+                            <div class="p-3 bg-light rounded border">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1">Opportunity Deal</div>
+                                <div class="fw-bold text-dark fs-6">{{ followup.opportunity_name or 'Deal #' ~ followup.opportunity_id }}</div>
+                                <a href="{{ url_for('opportunities.opportunity_detail', opp_id=followup.opportunity_id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                                    View Opportunity &rarr;
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        {% if not followup.customer_id and not followup.lead_id and not followup.opportunity_id %}
+                            <div class="text-muted fst-italic small">No linked entity.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule Modal -->
+{% if followup.status in ('Planned', 'Missed') %}
+<div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('followups.followup_reschedule', followup_id=followup.followup_id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="rescheduleModalLabel">Reschedule Follow-Up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        Select a new future date for this follow-up. The date cannot be in the past (Asia/Kolkata).
+                        {% if followup.status == 'Missed' %}
+                            Rescheduling will reopen this record with <strong>Planned</strong> status.
+                        {% endif %}
+                    </p>
+                    <div class="mb-3">
+                        <label for="modalFollowupDate" class="form-label fw-semibold">New Follow-Up Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="modalFollowupDate" name="followup_date" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Reschedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

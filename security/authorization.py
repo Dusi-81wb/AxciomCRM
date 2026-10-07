@@ -114,3 +114,7 @@ def can_access_record(user, record_assigned_to):
         return record_assigned_to == user.get("user_id")
 
     return False
+
+
+# Compatibility alias
+get_visible_user_ids = visible_user_ids

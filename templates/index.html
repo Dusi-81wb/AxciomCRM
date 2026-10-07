@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Home — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9 col-lg-8">
+        <div class="card auth-card shadow-sm p-4 text-center mt-3">
+            <div class="card-body">
+                <h1 class="display-6 fw-bold text-primary mb-2">AcxiomCRM</h1>
+                <p class="lead text-muted mb-4">Role-Based Customer Relationship Management</p>
+
+                {% if current_user %}
+                    <!-- Authenticated Application Shell -->
+                    <div class="alert alert-success d-inline-block px-4 py-2 mb-4">
+                        Signed in as <strong>{{ current_user.username }}</strong>
+                        <span class="badge bg-secondary ms-1">{{ current_user.role_name }}</span>
+                    </div>
+
+                    <div class="card bg-light border-0 mb-4 text-start p-3">
+                        <h6 class="fw-bold mb-3 text-dark">Active User Session:</h6>
+                        <div class="row g-2 small">
+                            <div class="col-sm-6">
+                                <strong>Username:</strong> {{ current_user.username }}
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>Role:</strong> <span class="badge bg-primary">{{ current_user.role_name }}</span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>Email:</strong> {{ current_user.email }}
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>Status:</strong> <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mb-4">
+                        Select an action or use the navigation bar to proceed.
+                    </p>
+
+                    <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger px-4">Log Out</button>
+                    </form>
+                {% else %}
+                    <!-- Public Landing View -->
+                    <p class="text-secondary mb-4">
+                        Secure, role-based CRM platform. Please authenticate to access system resources.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary px-4">Sign In</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary px-4">Register</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

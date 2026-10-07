@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}404 Not Found — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card error-card shadow-sm text-center p-4">
+            <div class="card-body">
+                <div class="mb-3 text-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-compass" viewBox="0 0 16 16">
+                        <path d="M8 160.1-8-8 8-8 8 0.1 8zm0-1A7 7 0 1 0 8 1a7 7 0 0 0 0 14m.5-4.015-3.071 1.535a.5.5 0 0 1-.66-.66l1.535-3.071a.5.5 0 0 1 .13-.17l2.898-2.898a.5.5 0 0 1 .707 0l.707.707a.5.5 0 0 1 0 .707L8.67 9.855a.5.5 0 0 1-.17.13m-.253-2.58L7.02 9.632l1.226-1.227 1.227 1.226z"/>
+                    </svg>
+                </div>
+                <h1 class="h3 fw-bold text-dark mb-2">404 — Page Not Found</h1>
+                <p class="text-muted mb-4">
+                    The requested page could not be found. Please verify the URL or return to the main application.
+                </p>
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="{{ url_for('auth.index') }}" class="btn btn-primary px-4">Return to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

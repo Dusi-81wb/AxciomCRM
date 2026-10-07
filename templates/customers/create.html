@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Create Customer — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 fw-bold text-dark mb-1">Create Customer</h1>
+                <p class="text-muted small mb-0">Register a new client profile in the CRM database.</p>
+            </div>
+            <div>
+                <a href="{{ url_for('customers.customer_list') }}" class="btn btn-outline-secondary">
+                    &larr; Back to List
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('customers.customer_create') }}" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Contact & Identity -->
+                    <h5 class="fw-semibold text-secondary mb-3">1. Primary Contact Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="customer_name" class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control {% if errors.customer_name %}is-invalid{% endif %}" 
+                                   id="customer_name" 
+                                   name="customer_name" 
+                                   value="{{ form_data.customer_name or '' }}" 
+                                   required 
+                                   maxlength="100"
+                                   placeholder="Full customer or company representative name">
+                            {% if errors.customer_name %}
+                                <div class="invalid-feedback">{{ errors.customer_name }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="company_name" class="form-label fw-semibold">Company Name</label>
+                            <input type="text" 
+                                   class="form-control {% if errors.company_name %}is-invalid{% endif %}" 
+                                   id="company_name" 
+                                   name="company_name" 
+                                   value="{{ form_data.company_name or '' }}" 
+                                   maxlength="100"
+                                   placeholder="Registered business entity">
+                            {% if errors.company_name %}
+                                <div class="invalid-feedback">{{ errors.company_name }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" 
+                                   class="form-control {% if errors.email %}is-invalid{% endif %}" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ form_data.email or '' }}" 
+                                   required 
+                                   maxlength="100"
+                                   placeholder="contact@company.com">
+                            {% if errors.email %}
+                                <div class="invalid-feedback">{{ errors.email }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+                            <input type="tel" 
+                                   class="form-control {% if errors.phone %}is-invalid{% endif %}" 
+                                   id="phone" 
+                                   name="phone" 
+                                   value="{{ form_data.phone or '' }}" 
+                                   required 
+                                   maxlength="20"
+                                   placeholder="e.g. +91-9876543210 or 9876543210">
+                            {% if errors.phone %}
+                                <div class="invalid-feedback">{{ errors.phone }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Address Information -->
+                    <h5 class="fw-semibold text-secondary mb-3">2. Physical Location</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label for="address" class="form-label fw-semibold">Street Address</label>
+                            <input type="text" 
+                                   class="form-control {% if errors.address %}is-invalid{% endif %}" 
+                                   id="address" 
+                                   name="address" 
+                                   value="{{ form_data.address or '' }}" 
+                                   maxlength="255"
+                                   placeholder="Suite, Building, Street">
+                            {% if errors.address %}
+                                <div class="invalid-feedback">{{ errors.address }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="city" class="form-label fw-semibold">City</label>
+                            <input type="text" 
+                                   class="form-control {% if errors.city %}is-invalid{% endif %}" 
+                                   id="city" 
+                                   name="city" 
+                                   value="{{ form_data.city or '' }}" 
+                                   maxlength="50"
+                                   placeholder="City name">
+                            {% if errors.city %}
+                                <div class="invalid-feedback">{{ errors.city }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="state" class="form-label fw-semibold">State / Province</label>
+                            <input type="text" 
+                                   class="form-control {% if errors.state %}is-invalid{% endif %}" 
+                                   id="state" 
+                                   name="state" 
+                                   value="{{ form_data.state or '' }}" 
+                                   maxlength="50"
+                                   placeholder="State or Region">
+                            {% if errors.state %}
+                                <div class="invalid-feedback">{{ errors.state }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Assignment & Ownership -->
+                    <h5 class="fw-semibold text-secondary mb-3">3. Ownership & Assignment</h5>
+                    <div class="row g-3 mb-4">
+                        {% if current_user.role_name in ['Admin', 'Manager'] %}
+                            <div class="col-md-6">
+                                <label for="assigned_to" class="form-label fw-semibold">Assigned Sales Executive <span class="text-danger">*</span></label>
+                                <select class="form-select {% if errors.assigned_to %}is-invalid{% endif %}" 
+                                        id="assigned_to" 
+                                        name="assigned_to" 
+                                        required>
+                                    <option value="">— Select Active Sales Executive —</option>
+                                    {% for rep in sales_reps %}
+                                        <option value="{{ rep.user_id }}" 
+                                            {% if (form_data.assigned_to|string) == (rep.user_id|string) %}selected{% endif %}>
+                                            {{ rep.username }} ({{ rep.email }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if errors.assigned_to %}
+                                    <div class="invalid-feedback">{{ errors.assigned_to }}</div>
+                                {% else %}
+                                    <div class="form-text small">Only active users with Sales Executive role are eligible.</div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold text-muted">Assigned Sales Executive</label>
+                                <div class="p-2 border rounded bg-light">
+                                    <strong>{{ current_user.username }}</strong> &mdash; 
+                                    <span class="text-muted">As a Sales Executive, new customers you create are automatically assigned to you.</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <a href="{{ url_for('customers.customer_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Create Customer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

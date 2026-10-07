@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card auth-card shadow-sm mt-3">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold">Sign In</h3>
+                    <p class="text-muted small">Enter your credentials to access AcxiomCRM</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label for="identifier" class="form-label">Username or Email</label>
+                        <input type="text" class="form-control {% if errors and errors.identifier %}is-invalid{% endif %}" 
+                               id="identifier" name="identifier" value="{{ form_data.identifier if form_data else '' }}" 
+                               required autofocus autocomplete="username">
+                        {% if errors and errors.identifier %}
+                            <div class="invalid-feedback">{{ errors.identifier }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control {% if errors and errors.password %}is-invalid{% endif %}" 
+                               id="password" name="password" required autocomplete="current-password">
+                        {% if errors and errors.password %}
+                            <div class="invalid-feedback">{{ errors.password }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                    </div>
+                </form>
+
+                <div class="mt-4 text-center">
+                    <p class="text-muted small mb-0">
+                        Don't have an account? <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Register</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Development Demo Accounts Notice -->
+        <div class="card border-0 bg-transparent mt-3 text-center">
+            <div class="card-body p-2 text-muted small">
+                <strong>Demo Credentials:</strong><br>
+                Admin: <code>admin@acxiomcrm.com</code> / <code>Admin@123</code><br>
+                Manager: <code>manager@acxiomcrm.com</code> / <code>Manager@123</code><br>
+                Sales: <code>sales@acxiomcrm.com</code> / <code>Sales@123</code>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

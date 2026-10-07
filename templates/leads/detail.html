@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lead.lead_name }} — Lead Details — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header & Action Controls -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{{ url_for('leads.lead_list') }}">Leads</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ lead.lead_code }}</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                    {{ lead.lead_name }}
+                    {% if lead.status == 'New' %}
+                        <span class="badge bg-info text-dark fs-6">New</span>
+                    {% elif lead.status == 'Contacted' %}
+                        <span class="badge bg-primary fs-6">Contacted</span>
+                    {% elif lead.status == 'Qualified' %}
+                        <span class="badge bg-success fs-6">Qualified</span>
+                    {% elif lead.status == 'Converted' %}
+                        <span class="badge bg-dark fs-6">Converted</span>
+                    {% elif lead.status == 'Unqualified' %}
+                        <span class="badge bg-secondary fs-6">Unqualified</span>
+                    {% elif lead.status == 'Lost' %}
+                        <span class="badge bg-danger fs-6">Lost</span>
+                    {% endif %}
+                </h1>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <a href="{{ url_for('leads.lead_list') }}" class="btn btn-outline-secondary">
+                    &larr; Back to List
+                </a>
+
+                {% if lead.status != 'Converted' %}
+                    <a href="{{ url_for('leads.lead_edit', lead_id=lead.lead_id) }}" class="btn btn-outline-primary">
+                        Edit Lead
+                    </a>
+                {% endif %}
+
+                <!-- Convert Lead Button: only active when Qualified -->
+                {% if lead.status == 'Qualified' %}
+                    <a href="{{ url_for('leads.lead_convert', lead_id=lead.lead_id) }}" class="btn btn-success fw-semibold">
+                        Convert Lead &rarr;
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Status Progression Toolbar -->
+        {% if lead.status in ['New', 'Contacted', 'Qualified'] %}
+            <div class="card shadow-sm border-0 mb-4 bg-light">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small fw-semibold text-secondary">Current Stage:</span>
+                        <span class="badge bg-secondary">{{ lead.status }}</span>
+                        <span class="text-muted small">&rarr; Progress lead stage:</span>
+                    </div>
+                    <form action="{{ url_for('leads.lead_status', lead_id=lead.lead_id) }}" method="POST" class="d-flex gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if lead.status == 'New' %}
+                            <button type="submit" name="status" value="Contacted" class="btn btn-sm btn-primary">Mark as Contacted</button>
+                            <button type="submit" name="status" value="Unqualified" class="btn btn-sm btn-outline-secondary">Mark Unqualified</button>
+                            <button type="submit" name="status" value="Lost" class="btn btn-sm btn-outline-danger">Mark as Lost</button>
+                        {% elif lead.status == 'Contacted' %}
+                            <button type="submit" name="status" value="Qualified" class="btn btn-sm btn-success">Qualify Lead</button>
+                            <button type="submit" name="status" value="Unqualified" class="btn btn-sm btn-outline-secondary">Mark Unqualified</button>
+                            <button type="submit" name="status" value="Lost" class="btn btn-sm btn-outline-danger">Mark as Lost</button>
+                        {% elif lead.status == 'Qualified' %}
+                            <a href="{{ url_for('leads.lead_convert', lead_id=lead.lead_id) }}" class="btn btn-sm btn-success">Convert to Customer</a>
+                            <button type="submit" name="status" value="Lost" class="btn btn-sm btn-outline-danger">Mark as Lost</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        {% elif lead.status in ['Converted', 'Unqualified', 'Lost'] %}
+            <div class="alert alert-light border shadow-sm mb-4 d-flex align-items-center gap-2 text-muted small">
+                <span><strong>Terminal Stage:</strong> This lead is in the final state <strong>{{ lead.status }}</strong>. Further stage changes cannot be made.</span>
+            </div>
+        {% endif %}
+
+        <div class="row g-4">
+            <!-- Left Column: Lead Profile -->
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h5 class="card-title fw-bold text-secondary mb-0">Lead Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4 text-muted">Lead Code</dt>
+                            <dd class="col-sm-8 fw-semibold text-primary">{{ lead.lead_code }}</dd>
+
+                            <dt class="col-sm-4 text-muted">Lead Name</dt>
+                            <dd class="col-sm-8 fw-bold">{{ lead.lead_name }}</dd>
+
+                            <dt class="col-sm-4 text-muted">Company Name</dt>
+                            <dd class="col-sm-8">{{ lead.company_name or '—' }}</dd>
+
+                            <dt class="col-sm-4 text-muted">Email Address</dt>
+                            <dd class="col-sm-8">
+                                <a href="mailto:{{ lead.email }}" class="text-decoration-none">{{ lead.email }}</a>
+                            </dd>
+
+                            <dt class="col-sm-4 text-muted">Phone Number</dt>
+                            <dd class="col-sm-8">
+                                {% if lead.phone %}
+                                    <a href="tel:{{ lead.phone }}" class="text-decoration-none">{{ lead.phone }}</a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </dd>
+
+                            <hr class="my-3 text-muted">
+
+                            <dt class="col-sm-4 text-muted">Lead Source</dt>
+                            <dd class="col-sm-8">{{ lead.source or '—' }}</dd>
+
+                            <dt class="col-sm-4 text-muted">Expected Value</dt>
+                            <dd class="col-sm-8">
+                                {% if lead.expected_value is not none %}
+                                    <span class="fw-bold text-success fs-6">₹{{ "{:,.2f}".format(lead.expected_value) }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Ownership & Timestamps -->
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h5 class="card-title fw-bold text-secondary mb-0">Ownership & Assignment</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5 text-muted">Assigned To</dt>
+                            <dd class="col-sm-7">
+                                {% if lead.assigned_to_name %}
+                                    <span class="badge bg-light text-dark border p-2">
+                                        {{ lead.assigned_to_name }} ({{ lead.assigned_to_role or 'Sales Executive' }})
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-5 text-muted">Lifecycle Status</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-secondary">{{ lead.status }}</span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 bg-light">
+                    <div class="card-header bg-light border-0 pt-3 pb-0">
+                        <h6 class="card-title fw-bold text-secondary mb-0">Audit Timestamps</h6>
+                    </div>
+                    <div class="card-body small text-muted">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Created Date</dt>
+                            <dd class="col-sm-7 text-dark">{{ lead.created_date.strftime('%Y-%m-%d %H:%M:%S') if lead.created_date else '—' }}</dd>
+
+                            <dt class="col-sm-5">Last Modified</dt>
+                            <dd class="col-sm-7 text-dark">{{ lead.modified_date.strftime('%Y-%m-%d %H:%M:%S') if lead.modified_date else 'Never' }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

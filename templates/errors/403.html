@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}403 Forbidden — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card error-card shadow-sm text-center p-4">
+            <div class="card-body">
+                <div class="mb-3 text-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-shield-lock" viewBox="0 0 16 16">
+                        <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.599 4.488-.71 7.943-2.42 10.178A11.7 11.7 0 0 1 8 15.5c-.754 0-1.602-.275-2.44-.73-1.71-2.235-3.018-5.69-2.419-10.178A1.54 1.54 0 0 1 4.185 1.43c.658-.215 1.777-.57 2.887-.87"/>
+                        <path d="M9.5 6.5a1.5 1.5 0 0 1-1.5 1.5v1a.5.5 0 0 1-1 0V8A1.5 1.5 0 0 1 8 5a1.5 1.5 0 0 1 1.5 1.5"/>
+                    </svg>
+                </div>
+                <h1 class="h3 fw-bold text-dark mb-2">403 — Access Forbidden</h1>
+                <p class="text-muted mb-4">
+                    You do not have permission to access this resource. Your account role does not satisfy the authorization requirements for this page.
+                </p>
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="{{ url_for('auth.index') }}" class="btn btn-primary px-4">Return to Home</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary px-4">Switch Account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

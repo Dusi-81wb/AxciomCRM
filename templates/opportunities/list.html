@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Opportunities — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-7">
+        <h1 class="h3 fw-bold text-dark mb-1">Opportunity Management</h1>
+        <p class="text-muted small mb-0">Track sales pipeline, deal stages, probability, and commercial revenue outcomes.</p>
+    </div>
+    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('opportunities.opportunity_create') }}" class="btn btn-primary shadow-sm">
+            <span class="fw-bold">+</span> New Opportunity
+        </a>
+    </div>
+</div>
+
+<!-- Active Pipeline Summary Cards (Open Opportunities Only) -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm bg-primary text-white h-100">
+            <div class="card-body p-3">
+                <span class="small text-white-50 text-uppercase fw-semibold">Total Pipeline Value</span>
+                <h3 class="fw-bold mb-0 mt-1" id="total-pipeline-value">
+                    ₹{{ "{:,.2f}".format(pipeline_summary.total_pipeline_value or 0) }}
+                </h3>
+                <small class="text-white-50">Active deals (Open status)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm bg-info text-dark h-100">
+            <div class="card-body p-3">
+                <span class="small text-muted text-uppercase fw-semibold">Weighted Pipeline</span>
+                <h3 class="fw-bold mb-0 mt-1 text-dark" id="weighted-pipeline-value">
+                    ₹{{ "{:,.2f}".format(pipeline_summary.weighted_pipeline_value or 0) }}
+                </h3>
+                <small class="text-muted">Probability-adjusted revenue</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm bg-light border h-100">
+            <div class="card-body p-3">
+                <span class="small text-muted text-uppercase fw-semibold">Active Deals</span>
+                <h3 class="fw-bold mb-0 mt-1 text-primary">
+                    {{ pipeline_summary.open_count or 0 }}
+                </h3>
+                <small class="text-muted">Deals in active pipeline</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm bg-light border h-100">
+            <div class="card-body p-3">
+                <span class="small text-muted text-uppercase fw-semibold">Closed Outcomes</span>
+                <div class="d-flex gap-2 mt-2">
+                    <span class="badge bg-success py-2 px-2 fs-6">Won: {{ pipeline_summary.won_count or 0 }}</span>
+                    <span class="badge bg-danger py-2 px-2 fs-6">Lost: {{ pipeline_summary.lost_count or 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filtering Controls -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('opportunities.opportunity_list') }}" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control form-control-sm"
+                       placeholder="Search deal or customer..."
+                       value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <select name="stage" class="form-select form-select-sm">
+                    <option value="">All Stages</option>
+                    <option value="Qualification" {% if stage == 'Qualification' %}selected{% endif %}>Qualification</option>
+                    <option value="Proposal" {% if stage == 'Proposal' %}selected{% endif %}>Proposal</option>
+                    <option value="Negotiation" {% if stage == 'Negotiation' %}selected{% endif %}>Negotiation</option>
+                    <option value="Won" {% if stage == 'Won' %}selected{% endif %}>Won</option>
+                    <option value="Lost" {% if stage == 'Lost' %}selected{% endif %}>Lost</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="Open" {% if status == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="Won" {% if status == 'Won' %}selected{% endif %}>Won</option>
+                    <option value="Lost" {% if status == 'Lost' %}selected{% endif %}>Lost</option>
+                </select>
+            </div>
+            {% if active_sales_reps %}
+                <div class="col-md-2">
+                    <select name="assigned_to" class="form-select form-select-sm">
+                        <option value="">All Sales Reps</option>
+                        {% for rep in active_sales_reps %}
+                            <option value="{{ rep.user_id }}" {% if assigned_to == rep.user_id|string %}selected{% endif %}>
+                                {{ rep.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            <div class="col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-dark">Filter</button>
+                <a href="{{ url_for('opportunities.opportunity_list') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Opportunities Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small">
+                    <tr>
+                        <th class="ps-3">Opportunity Name</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Stage</th>
+                        <th>Probability</th>
+                        <th>Weighted</th>
+                        <th>Expected Close</th>
+                        <th>Status</th>
+                        <th>Owner</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if opportunities %}
+                        {% for opp in opportunities %}
+                            <tr>
+                                <td class="ps-3 fw-semibold">
+                                    <a href="{{ url_for('opportunities.opportunity_detail', opp_id=opp.opportunity_id) }}" class="text-decoration-none text-dark">
+                                        {{ opp.opportunity_name }}
+                                    </a>
+                                    {% if opp.lead_code %}
+                                        <div class="small text-muted">
+                                            from <span class="badge bg-light text-secondary border">{{ opp.lead_code }}</span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-dark">{{ opp.customer_name or '—' }}</span>
+                                    {% if opp.company_name %}
+                                        <div class="small text-muted">{{ opp.company_name }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-dark">
+                                    ₹{{ "{:,.2f}".format(opp.amount) }}
+                                </td>
+                                <td>
+                                    {% if opp.stage == 'Qualification' %}
+                                        <span class="badge bg-info text-dark">Qualification</span>
+                                    {% elif opp.stage == 'Proposal' %}
+                                        <span class="badge bg-primary">Proposal</span>
+                                    {% elif opp.stage == 'Negotiation' %}
+                                        <span class="badge bg-warning text-dark">Negotiation</span>
+                                    {% elif opp.stage == 'Won' %}
+                                        <span class="badge bg-success">Won</span>
+                                    {% elif opp.stage == 'Lost' %}
+                                        <span class="badge bg-danger">Lost</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span>{{ opp.probability }}%</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted small">
+                                    ₹{{ "{:,.2f}".format(opp.weighted_value) }}
+                                </td>
+                                <td class="small text-nowrap">
+                                    {{ opp.expected_close_date.strftime('%Y-%m-%d') if opp.expected_close_date else '—' }}
+                                </td>
+                                <td>
+                                    {% if opp.status == 'Open' %}
+                                        <span class="badge bg-primary">Open</span>
+                                    {% elif opp.status == 'Won' %}
+                                        <span class="badge bg-success">Won</span>
+                                    {% elif opp.status == 'Lost' %}
+                                        <span class="badge bg-danger">Lost</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">
+                                    {{ opp.assigned_to_name or 'Unassigned' }}
+                                </td>
+                                <td class="text-end pe-3">
+                                    <a href="{{ url_for('opportunities.opportunity_detail', opp_id=opp.opportunity_id) }}" class="btn btn-sm btn-outline-secondary">
+                                        View
+                                    </a>
+                                    {% if opp.status == 'Open' %}
+                                        <a href="{{ url_for('opportunities.opportunity_edit', opp_id=opp.opportunity_id) }}" class="btn btn-sm btn-outline-primary">
+                                            Edit
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                <div>No opportunities found matching your criteria.</div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+    <nav class="mt-4" aria-label="Opportunities pagination">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('opportunities.opportunity_list', page=current_page-1, search=search, stage=stage, status=status, assigned_to=assigned_to) }}">
+                    &laquo; Previous
+                </a>
+            </li>
+            {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {% if p == current_page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('opportunities.opportunity_list', page=p, search=search, stage=stage, status=status, assigned_to=assigned_to) }}">
+                        {{ p }}
+                    </a>
+                </li>
+            {% endfor %}
+            <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('opportunities.opportunity_list', page=current_page+1, search=search, stage=stage, status=status, assigned_to=assigned_to) }}">
+                    Next &raquo;
+                </a>
+            </li>
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

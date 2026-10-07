@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}401 Unauthorized — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card error-card shadow-sm text-center p-4">
+            <div class="card-body">
+                <div class="mb-3 text-info">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-person-x" viewBox="0 0 16 16">
+                        <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10q.39 0 .74.05q.226-.761.685-1.434q-.676-.116-1.425-.116c-2.3 0-4.5 1.15-4.5 3.5 0 .6.4 1.5 1 2z"/>
+                        <path d="M11.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708l3-3a.5.5 0 0 1 .708 0M8.146 5.146a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0"/>
+                    </svg>
+                </div>
+                <h1 class="h3 fw-bold text-dark mb-2">401 — Authentication Required</h1>
+                <p class="text-muted mb-4">
+                    You must be logged in with valid credentials to access this resource.
+                </p>
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary px-4">Sign In</a>
+                    <a href="{{ url_for('auth.index') }}" class="btn btn-outline-secondary px-4">Return to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

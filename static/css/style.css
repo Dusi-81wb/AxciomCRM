@@ -1,0 +1,73 @@
+/* ==========================================================================
+   AcxiomCRM — Application Shell Stylesheet (Phase 4)
+   Lightweight enhancements on top of Bootstrap 5.
+   ========================================================================== */
+
+/* Page layout & sticky footer */
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: #212529;
+}
+
+.main-container {
+    flex: 1;
+    padding-top: 2rem;
+    padding-bottom: 2.5rem;
+}
+
+/* Navbar branding */
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 1.25rem;
+}
+
+.navbar .nav-link {
+    font-size: 0.95rem;
+    transition: color 0.15s ease-in-out;
+}
+
+/* Card components */
+.auth-card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background-color: #ffffff;
+}
+
+.error-card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background-color: #ffffff;
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+/* Error icon styling */
+.error-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+}
+
+/* Flash alerts */
+.flash-container {
+    max-width: 750px;
+    margin: 0 auto 1.5rem auto;
+}
+
+.alert {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Footer */
+footer {
+    border-top: 1px solid #e9ecef;
+    background-color: #ffffff;
+    color: #6c757d;
+}

@@ -1296,3 +1296,40 @@ The blueprint and these specification notes must remain the project's implementa
    - All aggregations and listing queries executed server-side with parameterized psycopg2 SQL.
 6. Financial Calculations:
    - Pipeline value, weighted pipeline (Amount * Probability / 100), and won sales revenue computed using PostgreSQL NUMERIC and Python Decimal.
+
+100. Phase 11 REST API Decisions (Approved)
+1. Exposed Resources & Endpoints:
+   - Resources exposed: Customers (`/api/customers`), Leads (`/api/leads`), Opportunities (`/api/opportunities`).
+   - Follow-Ups and Activities are excluded from the API as they are not explicitly required by the assignment specification.
+   - Supported HTTP methods: GET (collection list), GET /<id> (single record detail), POST (create), PUT /<id> (update).
+   - DELETE endpoints are deliberately not implemented.
+2. API Authentication & CSRF:
+   - Authentication uses the established session mechanism (`session['user_id']`).
+   - Unauthenticated requests to any `/api/*` endpoint return HTTP 401 Unauthorized as pure JSON (`{"error": "Authentication required. Please log in."}`).
+   - CSRF protection is exempted specifically for `/api/*` routes via `csrf.exempt(api_bp)` to support standard REST client interaction while preserving CSRF protection across all browser HTML forms.
+3. Authorization & Anti-IDOR Enforcement:
+   - Admin: Organization-wide access and explicit assignment of active Sales Executives.
+   - Manager: Scoped access within manager visibility.
+   - Sales Executive: Strictly constrained to assigned records (`WHERE assigned_to = %s`). Direct attempts to view or edit unassigned records return HTTP 403 Forbidden. Creation automatically enforces self-assignment (`assigned_to = current_user['user_id']`), ignoring any client-submitted `assigned_to`.
+4. DTO & Output Serialization Architecture:
+   - Dedicated DTO layer in `schemas/api_schema.py` ensures database internals are never leaked directly to clients.
+   - Output serializers (`serialize_customer`, `serialize_lead`, `serialize_opportunity`) omit all sensitive data, passwords, password hashes, session keys, and database connection state.
+   - Money values (e.g. `amount`, `weighted_pipeline`) are formatted as exact decimal strings with two decimal places (e.g., `"250000.00"`), avoiding binary floating-point IEEE-754 precision loss.
+   - Timestamps and dates are formatted as ISO 8601 strings.
+5. Service Reuse & Transaction Atomicity:
+   - All business logic is reused directly from domain services (`customer_service`, `lead_service`, `opportunity_service`).
+   - No duplicate business logic or validation state machines exist in API routes.
+   - All state mutations (`POST`, `PUT`) write audit log entries atomically within the same PostgreSQL database transaction.
+6. Error Handling & Pure JSON Responses:
+   - Application-level error handlers (400, 401, 403, 404, 500) detect API requests (`/api/*` or `Accept: application/json`) and return uniform JSON responses (`{"error": "..."}`), preventing any HTML leakage.
+
+101. Phase 12 & Phase 13 Final Acceptance & Demo Readiness Decisions (Approved)
+1. Verification & Hardening Scope:
+   - Phases 12 and 13 are strictly verification, hardening, acceptance testing, and viva preparation phases.
+   - Zero new features, zero unapproved dependencies (no JWT, OAuth, ORM, Redis, Celery, FastAPI), zero new schema columns/tables.
+2. Test Suite Baseline:
+   - Complete automated test suite consists of 471 isolated tests passing with 0 failures and 0 skipped.
+   - Test database isolation is preserved using autouse test cleanup for newly inserted rows, protecting seed record visibility on paginated lists.
+3. Final Acceptance & Traceability:
+   - All 15 required acceptance scenarios verified end-to-end.
+   - Full requirement traceability confirmed from assignment functional specifications through implementation to automated tests.

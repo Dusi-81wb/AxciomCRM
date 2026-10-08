@@ -14,7 +14,7 @@ No authentication or CRM business routes are registered in Phase 0.
 """
 
 import os
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 from config import config_by_name, DevelopmentConfig
 from extensions import csrf, limiter
 import database
@@ -82,26 +82,42 @@ def create_app(config_name=None, config_object=None):
     from routes.report_routes import reports_bp
     app.register_blueprint(reports_bp)
 
+    # Register REST API blueprint (Phase 11)
+    from routes.api_routes import api_bp
+    csrf.exempt(api_bp)
+    app.register_blueprint(api_bp)
+
 
     # Phase 4 Centralized HTTP Error Handlers
     @app.errorhandler(400)
     def bad_request_error(error):
+        if request.path.startswith("/api/") or request.is_json:
+            msg = str(error.description) if hasattr(error, "description") else "Bad request."
+            return jsonify({"error": "Bad Request", "message": msg}), 400
         return render_template("errors/400.html"), 400
 
     @app.errorhandler(401)
     def unauthorized_error(error):
+        if request.path.startswith("/api/") or request.is_json:
+            return jsonify({"error": "Unauthorized", "message": "Authentication required."}), 401
         return render_template("errors/401.html"), 401
 
     @app.errorhandler(403)
     def forbidden_error(error):
+        if request.path.startswith("/api/") or request.is_json:
+            return jsonify({"error": "Forbidden", "message": "You do not have permission to access this resource."}), 403
         return render_template("errors/403.html"), 403
 
     @app.errorhandler(404)
     def not_found_error(error):
+        if request.path.startswith("/api/") or request.is_json:
+            return jsonify({"error": "Not Found", "message": "The requested resource was not found."}), 404
         return render_template("errors/404.html"), 404
 
     @app.errorhandler(500)
     def internal_server_error(error):
+        if request.path.startswith("/api/") or request.is_json:
+            return jsonify({"error": "Internal Server Error", "message": "An unexpected error occurred."}), 500
         return render_template("errors/500.html"), 500
 
 

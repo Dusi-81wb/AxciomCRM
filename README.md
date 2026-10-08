@@ -16,7 +16,7 @@ Enterprise Role-Based Customer Relationship Management (CRM) application enginee
 - **Opportunity Pipeline & Stage Engine:** Sales pipeline progression (`Qualification` $\rightarrow$ `Proposal` $\rightarrow$ `Negotiation` $\rightarrow$ `Won` / `Lost`) with terminal state enforcement, exact Decimal monetary arithmetic, and scope-aware Active and Weighted Pipeline calculations.
 - **Enterprise Account Security:** Adaptive scrypt password hashing, complexity policy enforcement, automatic account lockout upon 5 consecutive failed attempts, and secure session rotation.
 - **Immutable Audit Logging:** Append-only change log capturing previous and new state diffs in JSON, executed within the exact same database transaction as business mutations, protected by PostgreSQL database triggers.
-- **Comprehensive Quality Assurance:** Automated test suite with 230 isolated integration and unit tests passing with zero regressions.
+- **Comprehensive Quality Assurance:** Automated test suite with 471 isolated integration, security, and unit tests passing with zero regressions.
 
 ---
 
@@ -49,7 +49,7 @@ The table below outlines how standard enterprise ASP.NET Core architectural patt
 - **Security & Crypto:** Werkzeug security (`generate_password_hash`, `check_password_hash`), Flask-WTF (CSRF)
 - **Rate Limiting:** Flask-Limiter
 - **Templating & UI:** Jinja2, Bootstrap 5.3, Vanilla JavaScript
-- **Testing Framework:** `pytest` (230 test cases)
+- **Testing Framework:** `pytest` (471 test cases across 16 test modules)
 
 ---
 
@@ -233,9 +233,14 @@ python -m pytest -v
 - **Customer Management:** Customer CRUD, validation, unique phone/email constraints, soft deactivation.
 - **Lead Management & Conversion:** Lead state machine, conversion to Customer + Opportunity, atomicity rollback.
 - **Opportunity Management:** Linear stage machine, stage/status synchronization, terminal states, Decimal pipeline sums.
+- **Follow-Ups & Activities:** Relationship constraints, scheduled dates, terminal states, activity logs.
+- **Dashboard & Chart.js:** Real-time KPI calculations, pipeline values, Chart.js datasets, timezone consistency.
+- **Reports Suite:** 8 comprehensive reports, sorting, pagination, role-based scope filtering.
+- **REST API:** Secure JSON endpoints for Customers, Leads, Opportunities with session authentication.
+- **Integration & Security:** Multi-module lifecycle, IDOR defense, SQL injection and XSS resistance, audit trigger enforcement.
 
 ```text
-============================ 230 passed in 53.30s =============================
+======================= 471 passed in 122.08s (0:02:02) =======================
 ```
 
 ---

@@ -1253,4 +1253,46 @@ The blueprint and these specification notes must remain the project's implementa
    - Admin/Manager creation: Must explicitly select an active Sales Executive (role_id = 3, is_active = True). No fallback.
    - Visibility: Enforced in SQL (WHERE assigned_to = %s / ANY(%s)). Sales Executives see only their own records. Admin sees all; Manager sees approved scope.
    - Inactive Customers (status = 'Inactive') cannot receive new Follow-Ups or Activities.
-```
+
+98. Phase 9 Dashboard + Chart.js Decisions (Approved)
+1. Open Leads KPI Definition:
+   - Evaluated as non-terminal leads: status IN ('New', 'Contacted', 'Qualified').
+   - Terminal statuses ('Unqualified', 'Converted', 'Lost') are excluded from Open Leads count.
+2. 'This Week' Date Filter Semantics:
+   - Uses Monday start (ISO 8601 standard: Monday 00:00:00 through end of week / current day in Asia/Kolkata).
+   - Timezone: Asia/Kolkata timezone applied consistently to all boundary calculations.
+3. Chart.js Lead Status Categories:
+   - Displays the 5 assignment categories: New, Contacted, Qualified, Converted, Lost (per Spec Note 8).
+   - Functional 'Unqualified' status remains fully active in CRM database/validation but is excluded from this specific chart view.
+4. Monthly Sales Chart Presentation:
+   - Displays 12-month historical monthly trend of Won deals by ClosedDate: SUM(Amount) for Status = 'Won' grouped by month.
+   - Preserves exact monetary Decimal precision until final JSON serialization.
+5. Dashboard Role-Based Data Scope:
+   - Admin: Organization-wide CRM aggregates.
+   - Manager: Approved manager scope CRM aggregates.
+   - Sales Executive: Aggregates computed strictly over records assigned to authenticated user (WHERE assigned_to = current_user['user_id']).
+   - All aggregations executed server-side in PostgreSQL parameterized queries; unauthorized records are never delivered to the browser.
+
+99. Phase 10 Reports Decisions (Approved)
+1. User Activity Report Definition:
+   - Evaluated as CRM Sales Activities: Reports interaction records from the 'activities' table (Call, Meeting, Email, Task).
+   - Filterable by sales representative (assigned_to), activity_type, status (Completed, Planned), and date range (activity_date).
+   - Distinct from the system audit log ('audit_logs' table).
+2. Sales / Conversion Report Metrics & Formulas:
+   - Tracks dual conversion metrics:
+     * Lead Conversion Rate = (Converted Leads / Total Leads * 100) (or 0% if total leads is 0)
+     * Opportunity Win Rate = (Won Deals / (Won Deals + Lost Deals) * 100) (or 0% if total closed deals is 0)
+     * Total Won Sales Revenue = SUM(amount) for Status = 'Won' (ClosedDate within date range, NUMERIC/Decimal)
+   - Supports period-based analysis (Asia/Kolkata timezone).
+3. Export Functionality Scope:
+   - Strictly excluded in Phase 10 (tabular HTML reporting only). No CSV/Excel/PDF export implemented in this phase.
+4. Audit Report Access Authorization:
+   - Restricted strictly to the 'Admin' role using @admin_required. Manager and Sales Executive roles are rejected with HTTP 403 Forbidden.
+   - Preserves append-only immutability of audit records (read-only, no update/delete capabilities).
+5. Role-Based Scoping for CRM Reports:
+   - Admin: Organization-wide reporting visibility.
+   - Manager: Approved manager scope CRM reporting visibility.
+   - Sales Executive: Reporting data strictly filtered in SQL to records assigned to authenticated user (WHERE assigned_to = current_user['user_id']).
+   - All aggregations and listing queries executed server-side with parameterized psycopg2 SQL.
+6. Financial Calculations:
+   - Pipeline value, weighted pipeline (Amount * Probability / 100), and won sales revenue computed using PostgreSQL NUMERIC and Python Decimal.

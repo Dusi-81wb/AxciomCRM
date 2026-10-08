@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Report — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Audit Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold text-dark mb-0" id="report-title">Audit Log Report</h1>
+        <p class="text-muted small mb-0">Immutable, read-only system audit trails tracking entity operations and administrative security events.</p>
+    </div>
+    <div>
+        <span class="badge bg-danger px-3 py-2">
+            Administrator Only &bull; Read-Only
+        </span>
+    </div>
+</div>
+
+<!-- Filter & Search Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('reports.audit_report') }}" class="row g-2 align-items-center">
+            <div class="col-md-2">
+                <label for="filter-start-date" class="form-label small text-muted mb-0">From Date</label>
+                <input type="date" id="filter-start-date" name="start_date" class="form-control form-control-sm" 
+                       value="{{ start_date }}">
+            </div>
+            <div class="col-md-2">
+                <label for="filter-end-date" class="form-label small text-muted mb-0">To Date</label>
+                <input type="date" id="filter-end-date" name="end_date" class="form-control form-control-sm" 
+                       value="{{ end_date }}">
+            </div>
+            <div class="col-md-3">
+                <label for="filter-entity" class="form-label small text-muted mb-0">Entity / Module</label>
+                <input type="text" id="filter-entity" name="entity_name" class="form-control form-control-sm" 
+                       placeholder="e.g. Customer, Lead, Opportunity" 
+                       value="{{ entity_name }}">
+            </div>
+            <div class="col-md-2">
+                <label for="filter-action" class="form-label small text-muted mb-0">Action</label>
+                <input type="text" id="filter-action" name="action" class="form-control form-control-sm" 
+                       placeholder="e.g. CREATE, UPDATE" 
+                       value="{{ action }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2 pt-3">
+                <button type="submit" class="btn btn-sm btn-primary w-100" id="btn-apply-filters">Filter Logs</button>
+                {% if start_date or end_date or entity_name or action or user_id %}
+                    <a href="{{ url_for('reports.audit_report') }}" class="btn btn-sm btn-outline-secondary" id="btn-clear-filters">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Audit Log Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 font-monospace small" id="report-table">
+                <thead class="table-light font-sans-serif">
+                    <tr>
+                        <th scope="col" class="ps-3">
+                            <a href="{{ url_for('reports.audit_report', start_date=start_date, end_date=end_date, entity_name=entity_name, action=action, user_id=user_id, sort_by='created_date', sort_order='DESC' if sort_by == 'created_date' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Timestamp {% if sort_by == 'created_date' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.audit_report', start_date=start_date, end_date=end_date, entity_name=entity_name, action=action, user_id=user_id, sort_by='username', sort_order='DESC' if sort_by == 'username' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                User {% if sort_by == 'username' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.audit_report', start_date=start_date, end_date=end_date, entity_name=entity_name, action=action, user_id=user_id, sort_by='action', sort_order='DESC' if sort_by == 'action' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Action {% if sort_by == 'action' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.audit_report', start_date=start_date, end_date=end_date, entity_name=entity_name, action=action, user_id=user_id, sort_by='entity_name', sort_order='DESC' if sort_by == 'entity_name' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Entity {% if sort_by == 'entity_name' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">Record ID</th>
+                        <th scope="col">Result</th>
+                        <th scope="col" class="pe-3">Change Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if records %}
+                        {% for r in records %}
+                            <tr>
+                                <td class="ps-3 text-nowrap text-muted">
+                                    {{ r.created_date.strftime('%Y-%m-%d %H:%M:%S') if r.created_date else '—' }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        {{ r.username or 'SYSTEM' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        {{ r.action }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong>{{ r.entity_name }}</strong>
+                                </td>
+                                <td class="text-muted">
+                                    {{ r.record_id or '—' }}
+                                </td>
+                                <td>
+                                    {% if r.result == 'SUCCESS' %}
+                                        <span class="badge bg-success">SUCCESS</span>
+                                    {% elif r.result == 'FAILURE' %}
+                                        <span class="badge bg-danger">FAILURE</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ r.result or '—' }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-3 text-truncate" style="max-width: 300px;">
+                                    {% if r.new_values %}
+                                        <span title="{{ r.new_values }}">{{ r.new_values }}</span>
+                                    {% elif r.old_values %}
+                                        <span title="{{ r.old_values }}">{{ r.old_values }}</span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted" id="no-records-msg">
+                                <p class="mb-1 fw-semibold">No records found for the selected filters.</p>
+                                <small>No audit log events match your selected filters.</small>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total records)</span>
+            <nav aria-label="Audit report pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.audit_report', page=current_page-1, start_date=start_date, end_date=end_date, entity_name=entity_name, action=action, user_id=user_id, sort_by=sort_by, sort_order=sort_order) }}">Previous</a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == current_page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('reports.audit_report', page=p, start_date=start_date, end_date=end_date, entity_name=entity_name, action=action, user_id=user_id, sort_by=sort_by, sort_order=sort_order) }}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.audit_report', page=current_page+1, start_date=start_date, end_date=end_date, entity_name=entity_name, action=action, user_id=user_id, sort_by=sort_by, sort_order=sort_order) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Lead Report — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Lead Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold text-dark mb-0" id="report-title">Lead Report</h1>
+        <p class="text-muted small mb-0">Role-scoped prospective lead pipeline across all 6 lifecycle stages.</p>
+    </div>
+    <div>
+        <span class="badge bg-light text-dark border">
+            Total Records: <strong>{{ total_count }}</strong>
+        </span>
+    </div>
+</div>
+
+<!-- Filter & Search Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('reports.lead_report') }}" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <label for="filter-search" class="visually-hidden">Search</label>
+                <input type="text" id="filter-search" name="search" class="form-control form-control-sm" 
+                       placeholder="Search Name, Company, Email..." 
+                       value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <label for="filter-status" class="visually-hidden">Status</label>
+                <select id="filter-status" name="status" class="form-select form-select-sm">
+                    <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+                    <option value="New" {% if status == 'New' %}selected{% endif %}>New</option>
+                    <option value="Contacted" {% if status == 'Contacted' %}selected{% endif %}>Contacted</option>
+                    <option value="Qualified" {% if status == 'Qualified' %}selected{% endif %}>Qualified</option>
+                    <option value="Unqualified" {% if status == 'Unqualified' %}selected{% endif %}>Unqualified</option>
+                    <option value="Converted" {% if status == 'Converted' %}selected{% endif %}>Converted</option>
+                    <option value="Lost" {% if status == 'Lost' %}selected{% endif %}>Lost</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="filter-source" class="visually-hidden">Source</label>
+                <select id="filter-source" name="source" class="form-select form-select-sm">
+                    <option value="" {% if not source %}selected{% endif %}>All Sources</option>
+                    <option value="Website" {% if source == 'Website' %}selected{% endif %}>Website</option>
+                    <option value="Referral" {% if source == 'Referral' %}selected{% endif %}>Referral</option>
+                    <option value="Cold Call" {% if source == 'Cold Call' %}selected{% endif %}>Cold Call</option>
+                    <option value="Advertisement" {% if source == 'Advertisement' %}selected{% endif %}>Advertisement</option>
+                    <option value="Partner" {% if source == 'Partner' %}selected{% endif %}>Partner</option>
+                    <option value="Other" {% if source == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filter-assigned" class="visually-hidden">Assigned Rep</label>
+                <select id="filter-assigned" name="assigned_to" class="form-select form-select-sm">
+                    <option value="" {% if not assigned_to %}selected{% endif %}>All Assigned Reps</option>
+                    {% for se in sales_executives %}
+                        <option value="{{ se.user_id }}" {% if assigned_to == se.user_id|string %}selected{% endif %}>
+                            {{ se.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary w-100" id="btn-apply-filters">Filter</button>
+                {% if search or status or source or assigned_to %}
+                    <a href="{{ url_for('reports.lead_report') }}" class="btn btn-sm btn-outline-secondary" id="btn-clear-filters">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="report-table">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-3">
+                            <a href="{{ url_for('reports.lead_report', search=search, status=status, source=source, assigned_to=assigned_to, sort_by='lead_code', sort_order='DESC' if sort_by == 'lead_code' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Lead Code {% if sort_by == 'lead_code' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.lead_report', search=search, status=status, source=source, assigned_to=assigned_to, sort_by='lead_name', sort_order='DESC' if sort_by == 'lead_name' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Lead Name {% if sort_by == 'lead_name' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.lead_report', search=search, status=status, source=source, assigned_to=assigned_to, sort_by='company_name', sort_order='DESC' if sort_by == 'company_name' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Company {% if sort_by == 'company_name' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">Contact</th>
+                        <th scope="col">Source</th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.lead_report', search=search, status=status, source=source, assigned_to=assigned_to, sort_by='status', sort_order='DESC' if sort_by == 'status' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Status {% if sort_by == 'status' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col" class="text-end">
+                            <a href="{{ url_for('reports.lead_report', search=search, status=status, source=source, assigned_to=assigned_to, sort_by='expected_value', sort_order='DESC' if sort_by == 'expected_value' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Expected Value {% if sort_by == 'expected_value' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">Assigned Rep</th>
+                        <th scope="col" class="pe-3">
+                            <a href="{{ url_for('reports.lead_report', search=search, status=status, source=source, assigned_to=assigned_to, sort_by='created_date', sort_order='DESC' if sort_by == 'created_date' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Created Date {% if sort_by == 'created_date' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if records %}
+                        {% for r in records %}
+                            <tr>
+                                <td class="ps-3 fw-semibold text-primary font-monospace small">
+                                    {{ r.lead_code }}
+                                </td>
+                                <td class="fw-medium text-dark">
+                                    {{ r.lead_name }}
+                                </td>
+                                <td class="text-secondary">
+                                    {{ r.company_name or '—' }}
+                                </td>
+                                <td class="small">
+                                    <div>{{ r.email }}</div>
+                                    <div class="text-muted">{{ r.phone }}</div>
+                                </td>
+                                <td class="small text-muted">
+                                    {{ r.source or '—' }}
+                                </td>
+                                <td>
+                                    {% if r.status == 'New' %}
+                                        <span class="badge bg-primary">New</span>
+                                    {% elif r.status == 'Contacted' %}
+                                        <span class="badge bg-info text-dark">Contacted</span>
+                                    {% elif r.status == 'Qualified' %}
+                                        <span class="badge bg-success">Qualified</span>
+                                    {% elif r.status == 'Unqualified' %}
+                                        <span class="badge bg-secondary">Unqualified</span>
+                                    {% elif r.status == 'Converted' %}
+                                        <span class="badge bg-teal text-white" style="background-color: #20c997;">Converted</span>
+                                    {% elif r.status == 'Lost' %}
+                                        <span class="badge bg-danger">Lost</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ r.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-semibold">
+                                    {% if r.expected_value %}
+                                        ₹{{ "{:,.2f}".format(r.expected_value) }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        {{ r.assigned_to_name or 'Unassigned' }}
+                                    </span>
+                                </td>
+                                <td class="pe-3 small text-muted">
+                                    {{ r.created_date.strftime('%Y-%m-%d') if r.created_date else '—' }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted" id="no-records-msg">
+                                <p class="mb-1 fw-semibold">No records found for the selected filters.</p>
+                                <small>Try adjusting your search criteria, lead status, or assigned representative filter.</small>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total records)</span>
+            <nav aria-label="Lead report pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.lead_report', page=current_page-1, search=search, status=status, source=source, assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order) }}">Previous</a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == current_page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('reports.lead_report', page=p, search=search, status=status, source=source, assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order) }}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.lead_report', page=current_page+1, search=search, status=status, source=source, assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

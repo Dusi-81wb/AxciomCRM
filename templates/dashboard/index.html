@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard &mdash; AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h1 class="h2 mb-1 fw-bold text-dark">Executive Dashboard</h1>
+            <p class="text-muted mb-0 small">
+                Performance metrics, real-time pipeline status, and sales analytics for 
+                <span class="badge bg-primary">{{ current_user.role_name }}</span>
+            </p>
+        </div>
+        <div class="text-end text-muted small mt-2 mt-md-0">
+            <span>Timezone: <strong>Asia/Kolkata</strong></span>
+        </div>
+    </div>
+
+    <!-- Date Filters Bar -->
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-body p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <!-- Preset Filter Buttons -->
+                <div class="btn-group" role="group" aria-label="Dashboard Date Filters">
+                    <a href="{{ url_for('dashboard.index', range='today') }}" 
+                       class="btn btn-sm {{ 'btn-primary' if active_filter.type == 'today' else 'btn-outline-secondary' }}"
+                       id="filter-today">
+                        Today
+                    </a>
+                    <a href="{{ url_for('dashboard.index', range='this_week') }}" 
+                       class="btn btn-sm {{ 'btn-primary' if active_filter.type == 'this_week' else 'btn-outline-secondary' }}"
+                       id="filter-this-week">
+                        This Week
+                    </a>
+                    <a href="{{ url_for('dashboard.index', range='this_month') }}" 
+                       class="btn btn-sm {{ 'btn-primary' if active_filter.type == 'this_month' else 'btn-outline-secondary' }}"
+                       id="filter-this-month">
+                        This Month
+                    </a>
+                </div>
+
+                <!-- Custom Date Range Form -->
+                <form method="GET" action="{{ url_for('dashboard.index') }}" class="d-flex align-items-center gap-2 flex-wrap">
+                    <input type="hidden" name="range" value="custom">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light text-muted">From</span>
+                        <input type="date" 
+                               class="form-control" 
+                               name="start_date" 
+                               id="filter-start-date"
+                               value="{{ active_filter.start_date if active_filter.type == 'custom' else '' }}" 
+                               required>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light text-muted">To</span>
+                        <input type="date" 
+                               class="form-control" 
+                               name="end_date" 
+                               id="filter-end-date"
+                               value="{{ active_filter.end_date if active_filter.type == 'custom' else '' }}" 
+                               required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary" id="btn-apply-custom">
+                        Apply
+                    </button>
+                    {% if active_filter.type == 'custom' %}
+                        <a href="{{ url_for('dashboard.index', range='this_month') }}" class="btn btn-sm btn-link text-decoration-none text-muted">
+                            Reset
+                        </a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Active Filter Status Badge -->
+            <div class="mt-2 pt-2 border-top text-muted small d-flex align-items-center gap-2">
+                <span>Active Window:</span>
+                <span class="badge bg-light text-dark border">
+                    {% if active_filter.type == 'today' %}
+                        Today
+                    {% elif active_filter.type == 'this_week' %}
+                        This Week (Mon &ndash; Sun)
+                    {% elif active_filter.type == 'this_month' %}
+                        This Month
+                    {% elif active_filter.type == 'custom' %}
+                        Custom Range: {{ active_filter.start_date }} &rarr; {{ active_filter.end_date }}
+                    {% else %}
+                        All Time
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8 Mandatory KPI Cards -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Customers -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-primary border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Total Customers</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-dark" id="kpi-total-customers">{{ kpis.total_customers }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Total Leads -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-info border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Total Leads</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-dark" id="kpi-total-leads">{{ kpis.total_leads }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Open Leads -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-warning border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Open Leads</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-dark" id="kpi-open-leads">{{ kpis.open_leads }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Total Opportunities -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-secondary border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Total Opportunities</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-dark" id="kpi-total-opportunities">{{ kpis.total_opportunities }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Open Opportunities -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-primary border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Open Opportunities</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-dark" id="kpi-open-opportunities">{{ kpis.open_opportunities }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Won -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-success border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Won</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-success" id="kpi-won">{{ kpis.won_count }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Lost -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-danger border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Lost</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-danger" id="kpi-lost">{{ kpis.lost_count }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Total Pipeline Value -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card h-100 shadow-sm border-0 border-start border-dark border-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted fw-semibold small">Total Pipeline Value</span>
+                    <h3 class="fw-bold mt-2 mb-0 text-dark" id="kpi-total-pipeline-value">&#8377;{{ kpis.total_pipeline_value_formatted }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visualizations: 3 Required Chart.js Charts -->
+    <div class="row g-4">
+        <!-- Chart 1: Lead Status Chart -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm border-0 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-semibold">Lead Status</h5>
+                    <span class="badge bg-light text-muted">Total: {{ chart_data.lead_status.total }}</span>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 320px;">
+                    <div id="leadStatusEmptyMsg" class="text-muted text-center py-4 {{ 'd-none' if chart_data.lead_status.has_data else '' }}">
+                        <p class="mb-0">No lead data available</p>
+                    </div>
+                    <div class="w-100 {{ 'd-none' if not chart_data.lead_status.has_data else '' }}" style="position: relative; max-height: 280px;">
+                        <canvas id="leadStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Opportunity Pipeline by Stage Chart -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm border-0 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-semibold">Opportunity Pipeline</h5>
+                    <span class="badge bg-light text-muted">Deals: {{ chart_data.opportunity_pipeline.total }}</span>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 320px;">
+                    <div id="oppPipelineEmptyMsg" class="text-muted text-center py-4 {{ 'd-none' if chart_data.opportunity_pipeline.has_data else '' }}">
+                        <p class="mb-0">No opportunity data available</p>
+                    </div>
+                    <div class="w-100 {{ 'd-none' if not chart_data.opportunity_pipeline.has_data else '' }}" style="position: relative; max-height: 280px;">
+                        <canvas id="opportunityPipelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 3: Monthly Sales Trend (12-Month) -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0 bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0 fw-semibold">Monthly Sales</h5>
+                        <small class="text-muted">Won Deals Revenue Trend (ClosedDate)</small>
+                    </div>
+                    <span class="badge bg-light text-muted">12 Months Trend</span>
+                </div>
+                <div class="card-body" style="min-height: 320px;">
+                    <div id="monthlySalesEmptyMsg" class="text-muted text-center py-5 {{ 'd-none' if chart_data.monthly_sales.has_data else '' }}">
+                        <p class="mb-0">No sales data available</p>
+                    </div>
+                    <div class="w-100 {{ 'd-none' if not chart_data.monthly_sales.has_data else '' }}" style="position: relative; height: 300px;">
+                        <canvas id="monthlySalesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Embedded Server-Authorized Chart.js JSON Payload -->
+<script id="dashboard-chart-data" type="application/json">
+{{ chart_data_json|safe }}
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<!-- Application Dashboard Logic -->
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Pipeline Report — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Pipeline Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold text-dark mb-0" id="report-title">Pipeline Report</h1>
+        <p class="text-muted small mb-0">Active deals (Status = Open), stage progression, and Decimal-calculated weighted revenues.</p>
+    </div>
+    <div>
+        <span class="badge bg-success px-3 py-2">
+            Active Pipeline (Status = Open)
+        </span>
+    </div>
+</div>
+
+<!-- Active Pipeline Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 bg-primary bg-opacity-10 text-primary h-100">
+            <div class="card-body p-3">
+                <div class="text-uppercase small fw-bold tracking-wider mb-1">Active Deals</div>
+                <div class="h2 fw-bold mb-0" id="kpi-open-deals">{{ summary.total_open_deals }}</div>
+                <div class="small opacity-75 mt-1">Status = Open deals in pipeline</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 bg-success bg-opacity-10 text-success h-100">
+            <div class="card-body p-3">
+                <div class="text-uppercase small fw-bold tracking-wider mb-1">Total Pipeline Value</div>
+                <div class="h2 fw-bold mb-0 font-monospace" id="kpi-pipeline-value">₹{{ summary.total_pipeline_value_formatted }}</div>
+                <div class="small opacity-75 mt-1">SUM(Amount) of active deals</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 bg-dark bg-opacity-10 text-dark h-100">
+            <div class="card-body p-3">
+                <div class="text-uppercase small fw-bold tracking-wider mb-1">Weighted Pipeline</div>
+                <div class="h2 fw-bold mb-0 font-monospace" id="kpi-weighted-value">₹{{ summary.total_weighted_value_formatted }}</div>
+                <div class="small text-muted mt-1">∑(Amount × Probability / 100)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stage Breakdown Table -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h5 class="card-title fw-bold mb-0">Stage Breakdown</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" id="stage-breakdown-table">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-3">Pipeline Stage</th>
+                        <th scope="col" class="text-center">Active Deals</th>
+                        <th scope="col" class="text-end">Total Amount</th>
+                        <th scope="col" class="text-end pe-3">Weighted Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if stage_summaries %}
+                        {% for stg in stage_summaries %}
+                            <tr>
+                                <td class="ps-3 fw-semibold">
+                                    <span class="badge bg-light text-dark border">{{ stg.stage }}</span>
+                                </td>
+                                <td class="text-center fw-medium">{{ stg.deal_count }}</td>
+                                <td class="text-end font-monospace">₹{{ stg.stage_amount_formatted }}</td>
+                                <td class="text-end pe-3 font-monospace fw-semibold text-success">₹{{ stg.stage_weighted_amount_formatted }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-3 text-muted">No active stages found in scope.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Stage Filter Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('reports.pipeline_report') }}" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <label for="filter-stage" class="visually-hidden">Filter by Stage</label>
+                <select id="filter-stage" name="stage" class="form-select form-select-sm">
+                    <option value="" {% if not stage %}selected{% endif %}>All Active Stages</option>
+                    <option value="Qualification" {% if stage == 'Qualification' %}selected{% endif %}>Qualification</option>
+                    <option value="Proposal" {% if stage == 'Proposal' %}selected{% endif %}>Proposal</option>
+                    <option value="Negotiation" {% if stage == 'Negotiation' %}selected{% endif %}>Negotiation</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary" id="btn-apply-filters">Filter Deals</button>
+                {% if stage %}
+                    <a href="{{ url_for('reports.pipeline_report') }}" class="btn btn-sm btn-outline-secondary" id="btn-clear-filters">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Active Deals Listing -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="card-title fw-bold mb-0">Active Deals In Scope</h5>
+        <span class="text-muted small">Showing {{ records|length }} deals</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="report-table">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-3">
+                            <a href="{{ url_for('reports.pipeline_report', stage=stage, sort_by='opportunity_name', sort_order='DESC' if sort_by == 'opportunity_name' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Deal Name {% if sort_by == 'opportunity_name' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">Customer</th>
+                        <th scope="col">Stage</th>
+                        <th scope="col" class="text-end">
+                            <a href="{{ url_for('reports.pipeline_report', stage=stage, sort_by='amount', sort_order='DESC' if sort_by == 'amount' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Amount {% if sort_by == 'amount' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col" class="text-center">
+                            <a href="{{ url_for('reports.pipeline_report', stage=stage, sort_by='probability', sort_order='DESC' if sort_by == 'probability' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Prob {% if sort_by == 'probability' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col" class="text-end">Weighted Value</th>
+                        <th scope="col">Assigned Rep</th>
+                        <th scope="col" class="pe-3">
+                            <a href="{{ url_for('reports.pipeline_report', stage=stage, sort_by='expected_close_date', sort_order='DESC' if sort_by == 'expected_close_date' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Expected Close {% if sort_by == 'expected_close_date' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if records %}
+                        {% for r in records %}
+                            <tr>
+                                <td class="ps-3 fw-medium text-dark">
+                                    {{ r.opportunity_name }}
+                                </td>
+                                <td>
+                                    {{ r.customer_name }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ r.stage }}</span>
+                                </td>
+                                <td class="text-end font-monospace">
+                                    ₹{{ r.amount_formatted }}
+                                </td>
+                                <td class="text-center small">
+                                    {{ r.probability }}%
+                                </td>
+                                <td class="text-end font-monospace fw-semibold text-success">
+                                    ₹{{ r.weighted_value_formatted }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        {{ r.assigned_to_name or 'Unassigned' }}
+                                    </span>
+                                </td>
+                                <td class="pe-3 small text-muted">
+                                    {{ r.expected_close_date.strftime('%Y-%m-%d') if r.expected_close_date else '—' }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted" id="no-records-msg">
+                                <p class="mb-1 fw-semibold">No records found for the selected filters.</p>
+                                <small>There are currently no active pipeline opportunities matching your stage filter.</small>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total records)</span>
+            <nav aria-label="Pipeline pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.pipeline_report', page=current_page-1, stage=stage, sort_by=sort_by, sort_order=sort_order) }}">Previous</a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == current_page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('reports.pipeline_report', page=p, stage=stage, sort_by=sort_by, sort_order=sort_order) }}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.pipeline_report', page=current_page+1, stage=stage, sort_by=sort_by, sort_order=sort_order) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

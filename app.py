@@ -74,6 +74,14 @@ def create_app(config_name=None, config_object=None):
     from routes.activity_routes import activities_bp
     app.register_blueprint(activities_bp)
 
+    # Register dashboard blueprint (Phase 9)
+    from routes.dashboard_routes import dashboard_bp
+    app.register_blueprint(dashboard_bp)
+
+    # Register reports blueprint (Phase 10)
+    from routes.report_routes import reports_bp
+    app.register_blueprint(reports_bp)
+
 
     # Phase 4 Centralized HTTP Error Handlers
     @app.errorhandler(400)

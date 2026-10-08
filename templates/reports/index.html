@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Hub — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1" id="reports-header">CRM Reports</h1>
+        <p class="text-muted small mb-0">Role-aware analytical and operational reporting across all CRM business entities.</p>
+    </div>
+    <div>
+        <span class="badge bg-primary px-3 py-2 fs-6">
+            {{ current_user.role_name }} Access Scope
+        </span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 1. Customer Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
+                        </svg>
+                    </div>
+                    <h5 class="card-title fw-bold mb-0">Customer Report</h5>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Detailed roster of accounts, contact information, geographic distribution, and assigned account representatives.
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.customer_report') }}" class="btn btn-outline-primary btn-sm w-100 fw-semibold" id="btn-customer-report">
+                        View Customer Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Lead Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-info bg-opacity-10 text-info rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                        </svg>
+                    </div>
+                    <h5 class="card-title fw-bold mb-0">Lead Report</h5>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Complete breakdown of prospective leads across all 6 lifecycle stages (New, Contacted, Qualified, Unqualified, Converted, Lost).
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.lead_report') }}" class="btn btn-outline-info btn-sm w-100 fw-semibold" id="btn-lead-report">
+                        View Lead Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Follow-Up Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-warning bg-opacity-10 text-warning rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                        </svg>
+                    </div>
+                    <h5 class="card-title fw-bold mb-0">Follow-Up Report</h5>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Scheduled engagements, communications, planned meetings, and overdue interaction tracking.
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.followup_report') }}" class="btn btn-outline-warning btn-sm w-100 fw-semibold" id="btn-followup-report">
+                        View Follow-Up Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Opportunity Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
+                            <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2z"/>
+                        </svg>
+                    </div>
+                    <h5 class="card-title fw-bold mb-0">Opportunity Report</h5>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Comprehensive deal listings with stage progression, win probabilities, expected close dates, and ownership scope.
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.opportunity_report') }}" class="btn btn-outline-success btn-sm w-100 fw-semibold" id="btn-opportunity-report">
+                        View Opportunity Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Pipeline Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-secondary bg-opacity-10 text-dark rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.707l-4.146 4.147a.5.5 0 0 1-.708 0L7 6.707 3.354 10.354a.5.5 0 1 1-.708-.708l4-4a.5.5 0 0 1 .708 0L9.5 7.793 13.293 4H10.5a.5.5 0 0 1-.5-.5"/>
+                        </svg>
+                    </div>
+                    <h5 class="card-title fw-bold mb-0">Pipeline Report</h5>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Active deal pipeline analysis (Status = Open), stage breakdowns, and exact Decimal-calculated weighted revenue.
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.pipeline_report') }}" class="btn btn-outline-dark btn-sm w-100 fw-semibold" id="btn-pipeline-report">
+                        View Pipeline Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Sales / Conversion Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-primary bg-opacity-10 text-primary rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718zm3.391-3.836c-1.043-.263-1.6-.768-1.6-1.616 0-.995.9-1.808 2.29-1.95v3.566zm1.042 2.019c1.082.28 1.73.816 1.73 1.748 0 1.034-.78 1.872-2.33 2.018v-3.766z"/>
+                        </svg>
+                    </div>
+                    <h5 class="card-title fw-bold mb-0">Sales & Conversion Report</h5>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Dual conversion metrics: Lead Conversion Rate %, Opportunity Win Rate %, and total Won sales revenue.
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.sales_report') }}" class="btn btn-outline-primary btn-sm w-100 fw-semibold" id="btn-sales-report">
+                        View Sales Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. User Activity Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-success bg-opacity-10 text-success rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+                        </svg>
+                    </div>
+                    <h5 class="card-title fw-bold mb-0">User Activity Report</h5>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Operational CRM activity tracking covering Calls, Meetings, Emails, and Tasks performed by sales representatives.
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.user_activity_report') }}" class="btn btn-outline-success btn-sm w-100 fw-semibold" id="btn-user-activity-report">
+                        View Activity Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Audit Report (Admin Only) -->
+    {% if current_user.role_name == 'Admin' %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 border-warning hover-lift">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-danger bg-opacity-10 text-danger rounded-3 me-3">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h5 class="card-title fw-bold mb-0">Audit Report</h5>
+                        <span class="badge bg-danger text-white small">Administrator Only</span>
+                    </div>
+                </div>
+                <p class="card-text text-muted small flex-grow-1">
+                    Immutable security and audit log inspection trail tracking entity creation, updates, logins, and system events.
+                </p>
+                <div class="mt-3">
+                    <a href="{{ url_for('reports.audit_report') }}" class="btn btn-outline-danger btn-sm w-100 fw-semibold" id="btn-audit-report">
+                        View Audit Log Report &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

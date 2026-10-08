@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Report — AcxiomCRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Customer Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold text-dark mb-0" id="report-title">Customer Report</h1>
+        <p class="text-muted small mb-0">Role-scoped report of organizational and individual customer accounts.</p>
+    </div>
+    <div>
+        <span class="badge bg-light text-dark border">
+            Total Records: <strong>{{ total_count }}</strong>
+        </span>
+    </div>
+</div>
+
+<!-- Filter & Search Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('reports.customer_report') }}" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <label for="filter-search" class="visually-hidden">Search</label>
+                <input type="text" id="filter-search" name="search" class="form-control form-control-sm" 
+                       placeholder="Search Name, Email, Phone, or Company..." 
+                       value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <label for="filter-status" class="visually-hidden">Status</label>
+                <select id="filter-status" name="status" class="form-select form-select-sm">
+                    <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+                    <option value="Active" {% if status == 'Active' %}selected{% endif %}>Active</option>
+                    <option value="Inactive" {% if status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filter-assigned" class="visually-hidden">Assigned Rep</label>
+                <select id="filter-assigned" name="assigned_to" class="form-select form-select-sm">
+                    <option value="" {% if not assigned_to %}selected{% endif %}>All Assigned Reps</option>
+                    {% for se in sales_executives %}
+                        <option value="{{ se.user_id }}" {% if assigned_to == se.user_id|string %}selected{% endif %}>
+                            {{ se.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary" id="btn-apply-filters">Apply Filters</button>
+                {% if search or status or assigned_to %}
+                    <a href="{{ url_for('reports.customer_report') }}" class="btn btn-sm btn-outline-secondary" id="btn-clear-filters">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="report-table">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-3">
+                            <a href="{{ url_for('reports.customer_report', search=search, status=status, assigned_to=assigned_to, sort_by='customer_code', sort_order='DESC' if sort_by == 'customer_code' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Customer Code {% if sort_by == 'customer_code' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.customer_report', search=search, status=status, assigned_to=assigned_to, sort_by='customer_name', sort_order='DESC' if sort_by == 'customer_name' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Customer Name {% if sort_by == 'customer_name' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.customer_report', search=search, status=status, assigned_to=assigned_to, sort_by='company_name', sort_order='DESC' if sort_by == 'company_name' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Company {% if sort_by == 'company_name' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Location</th>
+                        <th scope="col">Assigned Rep</th>
+                        <th scope="col">
+                            <a href="{{ url_for('reports.customer_report', search=search, status=status, assigned_to=assigned_to, sort_by='status', sort_order='DESC' if sort_by == 'status' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Status {% if sort_by == 'status' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th scope="col" class="pe-3">
+                            <a href="{{ url_for('reports.customer_report', search=search, status=status, assigned_to=assigned_to, sort_by='created_date', sort_order='DESC' if sort_by == 'created_date' and sort_order == 'ASC' else 'ASC') }}" class="text-decoration-none text-dark">
+                                Created Date {% if sort_by == 'created_date' %}{{ '▲' if sort_order == 'ASC' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if records %}
+                        {% for r in records %}
+                            <tr>
+                                <td class="ps-3 fw-semibold text-primary font-monospace small">
+                                    {{ r.customer_code }}
+                                </td>
+                                <td class="fw-medium text-dark">
+                                    {{ r.customer_name }}
+                                </td>
+                                <td class="text-secondary">
+                                    {{ r.company_name or '—' }}
+                                </td>
+                                <td class="small">{{ r.email }}</td>
+                                <td class="small text-muted">{{ r.phone }}</td>
+                                <td class="small text-muted">
+                                    {% if r.city or r.state %}
+                                        {{ r.city or '' }}{% if r.city and r.state %}, {% endif %}{{ r.state or '' }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        {{ r.assigned_to_name or 'Unassigned' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if r.status == 'Active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-3 small text-muted">
+                                    {{ r.created_date.strftime('%Y-%m-%d') if r.created_date else '—' }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted" id="no-records-msg">
+                                <p class="mb-1 fw-semibold">No records found for the selected filters.</p>
+                                <small>Try adjusting your search query, status, or assigned representative filter.</small>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total records)</span>
+            <nav aria-label="Report pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if current_page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.customer_report', page=current_page-1, search=search, status=status, assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order) }}">Previous</a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == current_page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('reports.customer_report', page=p, search=search, status=status, assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order) }}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('reports.customer_report', page=current_page+1, search=search, status=status, assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
